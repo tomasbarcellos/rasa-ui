@@ -6,7 +6,7 @@
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.1",
     "cors": "^2.8.3",
-    "express": "^4.15.2",
+    "express": "^4.15.3",
     "http-proxy-middleware": "^0.17.4",
     "pg-promise": "^5.9.5",
     "request": "^2.81.0"
@@ -17,8 +17,8 @@
     "gulp": "^3.9.1"
   },
   "config": {
-    "rasaserver": "http://10.211.55.3:5000",
-    "postgresConnectionString": "postgres://postgres:password@10.211.55.3:5432/rasaui"
+    "rasaserver": "http://192.168.1.210:5000",
+    "postgresConnectionString": "postgres://postgres:password@192.168.1.210:5432/rasaui"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

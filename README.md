@@ -14,6 +14,10 @@ Rasa UI is a web application built on top of, and for, [Rasa NLU](https://github
 - Usage dashboard
 - Easily execute intent parsing using different models
 
+## Demo System
+
+- You are welcome to try out the demo system [here:](http://rasaui.us.to:5001)
+
 ![Screenshot1](https://github.com/paschmann/rasaui/blob/master/resources/rasa_ui_1.png)
 
 ## Getting Started
