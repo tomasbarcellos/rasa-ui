@@ -1,80 +1,91 @@
-<ol class="breadcrumb">
-  <li class="breadcrumb-item"><a href="#/agent">Agents</a></li>
-  <li class="breadcrumb-item"><a ng-href="#/agent/{{agent.agent_id}}">{{ agent.agent_name }}</a></li>
-  <li class="breadcrumb-item active">Stories Editor</li>
+<ol class="breadcrumb" breadcrumb="">
+  <li class="breadcrumb-item ng-scope active"><span>Stories</span></li>
 </ol>
-
-<style>
-.CodeMirror {
-	height: 500px;
-}
-</style>
 <div class="container-fluid">
-    <div class="animated fadeIn">
-        <div class="row">
-            <div class="col-sm-8 col-lg-8">
-              <div id="textareawrapper">
-                <textarea id="mdId"></textarea>
-              </div>
-            </div>
-            <div class="col-sm-4 col-lg-4">
-              <div id="accordion" role="tablist" data-toggle="tooltip" data-placement="top" title="Reference data" tooltip>
-                <div class="card">
-                  <div class="card-header" role="tab" id="headingOne">
-                    <h5 class="mb-0">
-                      <a data-toggle="collapse" data-target="#intentsList" aria-expanded="true" aria-controls="intentsList" style="color: #20a8d8;cursor: pointer;">
-                        Intents
-                      </a>
-                      <span class="badge badge-primary badge-pill pull-right">{{intentList.length}}</span>
-                    </h5>
-                  </div>
-
-                  <div id="intentsList" class="collapse show" role="tabpanel" aria-labelledby="headingOne" data-parent="#accordion">
-                    <div class="card-body" style="max-height: 350px;overflow-y: scroll">
-                      <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="intent in intentList"><span>{{intent.intent_name}}</span></li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div class="card">
-                  <div class="card-header" role="tab" id="headingTwo">
-                    <h5 class="mb-0">
-                      <a class="collapsed" data-toggle="collapse" data-target="#actionsList" aria-expanded="false" aria-controls="actionsList" style="color: #20a8d8;cursor: pointer;">
-                        Actions
-                      </a>
-                      <span class="badge badge-primary badge-pill pull-right">{{actionsList.length}}</span>
-                    </h5>
-                  </div>
-                  <div id="actionsList" class="collapse" role="tabpanel" aria-labelledby="headingTwo" data-parent="#accordion">
-                    <div class="card-body">
-                      <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="action in actionsList"><span>{{ action.action_name }}</span></li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div class="card">
-                  <div class="card-header" role="tab" id="headingThree">
-                    <h5 class="mb-0">
-                      <a class="collapsed" data-toggle="collapse" data-target="#entitiesList" aria-expanded="false" aria-controls="entitiesList" style="color: #20a8d8;cursor: pointer;">
-                        Available Slots
-                      </a>
-                      <span class="badge badge-primary badge-pill pull-right">{{availableSlots.length}}</span>
-                    </h5>
-                  </div>
-                  <div id="entitiesList" class="collapse" role="tabpanel" aria-labelledby="headingThree" data-parent="#accordion">
-                    <div class="card-body">
-                      <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="entity in entitiesList | filter:{slot_data_type:'!NOT_USED'} as availableSlots"> <span>{{ entity.entity_name }}</span></li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+  <div class="animated fadeIn">
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="alert alert-{{message.type}}" role="alert" ng-show="message.text !== ''">
+          {{message.text}}
+        </div>
+        <div class="card">
+          <div class="card-block">
+            <div class="form-group row">
+              <label for="select" class="col-sm-2 col-form-label">Bot</label>
+              <div class="col-sm-10">
+                <select id="bot_name" ng-change="loadBotStories(bot.bot_id)"
+                  ng-options="bot.bot_id as bot.bot_name for bot in botList" ng-model="bot.bot_id" class="form-control">
+                  <option value="">Please select one</option>
+                </select>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-<!--<div class="well mermaid" ng-bind-html="getGraph()"></div> -->
+
+  <div class="row" ng-show="bot.bot_id">
+    <div class="col-sm-12">
+      <div class="card">
+        <div class="card-header">
+          <strong>Stories</strong>
+          <span class="float-right">
+            <a class="btn btn-ghost-primary" ng-click="addStory()"><i class="icon-plus"></i></a>
+          </span>
+        </div>
+        <div class="card-block">
+          <div class="list-group" dir-paginate="story in storyList | itemsPerPage: 5" pagination-id="storyList">
+            <div class="list-group-item">
+              <span id="_{{story.story_id}}"><strong>{{story.story_name}}</strong><br />{{ story.timestamp }}</span>
+              <span class="float-right">
+                <button class="btn btn-outline-secondary mr-2" data-toggle="collapse"
+                  ng-click="toggleArrow(story.story_id)" data-target="#table_story_{{story.story_id}}"
+                  aria-expanded="false" aria-controls="table_story_{{story.story_id}}">
+                  <span class="icon-arrow-down" id="icon_story_{{story.story_id}}"></span>
+                </button>
+                <button class="btn btn btn-outline-danger" confirm-click-title="Delete Story"
+                  confirm-click="Are you sure? This will delete the story." ng-click="deleteStory(story.story_id)">
+                  <span class="icon-trash"></span>
+                </button>
+              </span>
+            </div>
+            <div class="collapse" id="table_story_{{story.story_id}}">
+              <div class="list-group-item">
+                <div class="row">
+                  <div class="col-sm-8">
+                    <textarea class="datainput form-control" id="{{story.story_id}}_formGroupInput2"
+                      ng-model="story.story">{{ story.story }}</textarea>
+                  </div>
+                  <div class="col-sm-4">
+                    <div class="form-group">
+                      <input type="text" autocomplete="off" ng-model="story.searchText" ng-change="search(story)" class="form-control" id="search"
+                        placeholder="Search for Intents, Actions and Entities">
+                      <div class="list-group"
+                        dir-paginate="item in story.searchList | itemsPerPage: 5"
+                        pagination-id="story.searchList">
+                        <div class="list-group-item">
+                          <a ng-click="addToStory(item, story)" href="">{{ item.text }} <span class="float-right">{{ item.type }}</span></a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <br />
+                <button type="submit" ng-click="updateStory(story.story_id)" class="btn btn-sm btn-primary"><i
+                    class="fa fa-dot-circle-o"></i>Save</button>
+
+              </div>
+            </div>
+          </div>
+
+          <div style="float:right">
+            <dir-pagination-controls pagination-id="storyList"></dir-pagination-controls>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

@@ -1,81 +1,70 @@
 const db = require('./db');
 const logger = require('../util/logger');
 
-function getSingleAction(req, res, next) {
-  const  action_id = Number(req.params.action_id);
-  logger.winston.info('actions.getSingleAction');
-  db.one('select * from actions where action_id = $1', action_id)
-    .then(function(data) {
-      res.status(200).json(data);
-    })
-    .catch(function(err) {
-      return next(err);
-    });
+function getBotActionsAndResponses(req, res, next) {
+  logger.winston.info('actions.getBotActionsAndResponses');
+  db.all('select * from actions where bot_id = ? order by action_id desc', req.query.bot_id, function(err, actions) {
+    if (err) {
+      logger.winston.error(err);
+    } else {
+      var actionIds = [];
+      for (var i = 0; i < actions.length; i++) {
+        actionIds.push(actions[i].action_id);
+      }
+      if (actionIds.length > 0) {
+        db.all('select * from responses where action_id in (' + actionIds.splice(",") + ')  order by action_id desc', function(err, responses) {
+          if (err) {
+            logger.winston.error(err);
+          } else {
+            res.status(200).json([{actions: actions, responses: responses}]);
+          }
+        });
+      } else {
+        res.status(200).json([{actions: actions, responses: []}]);
+      }
+    }
+  });
 }
 
-function getAgentActions(req, res, next) {
-  logger.winston.info('actions.getAgentActions');
-  const AgentID = Number(req.params.agent_id);
-  db.any('select * from actions where agent_id = $1 order by action_id', AgentID)
-    .then(function(data) {
-      res.status(200).json(data);
-    })
-    .catch(function(err) {
-      return next(err);
-    });
+function createAction(req, res, next) {
+  logger.winston.info('actions.createAction');
+  db.run('insert into actions (action_name, bot_id)' + 'values (?,?)', [req.body.action_name, req.body.bot_id], function(err) {
+    if (err) {
+      logger.winston.error("Error inserting a new record");
+    } else {
+      res.status(200).json({ status: 'success', message: 'Inserted' });
+    }
+  });
 }
 
-function createAgentAction(req, res, next) {
-  logger.winston.info('actions.createAgentAction');
-  db.any(
-    'insert into actions(agent_id, action_name)' +
-      'values($(agent_id), $(action_name))',
-    req.body
-  )
-    .then(function() {
-      res.status(200).json({
-        status: 'success',
-        message: 'Inserted'});
-    })
-    .catch(function(err) {
-      return next(err);
-    });
-}
 
 function removeAction(req, res, next) {
   logger.winston.info('actions.removeAction');
-  const action_id = Number(req.params.action_id);
-  db.result('delete from actions where action_id = $1', action_id)
-    .then(function(result) {
-      /* jshint ignore:start */
-      res.status(200).json({
-        status: 'success',
-        message: `Removed ${result.rowCount}`});
-      /* jshint ignore:end */
-    })
-    .catch(function(err) {
-      return next(err);
-    });
+  db.run('delete from actions where action_id = ?', req.query.action_id, function(err) {
+    if (err) {
+      logger.winston.error("Error removing the record");
+    } else {
+      db.run('delete from responses where action_id = ?', req.query.action_id);
+      res.status(200).json({ status: 'success', message: 'Removed' });
+    }
+  });
 }
+
 
 function updateAction(req, res, next) {
   logger.winston.info('actions.updateAction');
-  db.none('update actions set action_name=$2 where action_id=$1', [
-    Number(req.params.action_id),
-    req.body.action_name])
-    .then(function() {
-      res.status(200).json({
-        status: 'success',
-        message: 'Updated Action'});
-    })
-    .catch(function(err) {
-      return next(err);
-    });
+  db.run('update actions set action_name = ? where action_id = ?', [req.body.action_name, req.body.bot_id], function(err) {
+    if (err) {
+      logger.winston.error("Error updating the record");
+    } else {
+      res.status(200).json({ status: 'success', message: 'Updated' });
+    }
+  });
 }
 
 module.exports = {
-  getSingleAction,
-  getAgentActions,
-  createAgentAction,
+  getBotActionsAndResponses,
+  createAction,
   updateAction,
-  removeAction};
+  removeAction
+};

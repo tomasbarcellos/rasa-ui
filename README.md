@@ -1,131 +1,46 @@
 [![Docker Automated build](https://img.shields.io/docker/automated/jrottenberg/ffmpeg.svg)](https://hub.docker.com/r/paschmann/rasa-ui/)
 
-# With a major change to the architecture of Rasa (and Rasa X) we are currently evaluating how to proceed with the development of Rasa UI. Rasa UI is not compatible with the current version of Rasa.
-
 # Rasa UI
 
-Rasa UI is a web application built on top of, and for, [Rasa NLU](https://github.com/RasaHQ/rasa_nlu) and [Rasa Core](https://github.com/RasaHQ/rasa_core). Rasa UI provides a web application to quickly and easily be able to create agents, define intents and entities. It also provides some convenience features for Rasa NLU, like training your models, monitoring usage or viewing logs. Our goal is to replace api.ai/Dialogflow with Rasa, so a lot of the terminology and usage concepts are similar.
+Rasa UI is a web application built on top of, and for [Rasa](https://github.com/RasaHQ/rasa). Rasa UI provides a web application to quickly and easily be able to create and manage bots, NLU components (Regex, Examples, Entities, Intents, etc.) and Core components (Stories, Actions, Responses, etc.) through a web interface. It also provides some convenience features for Rasa, like training and loading your models, monitoring usage or viewing logs.
 
 ## Features
 
-- UI for feeding training data- Intents, Entities, Synonyms, Regex, Actions, Stories to DB and Testing endpoints.
-- Log requests for usage tracking, history, improvements
+- UI for creating and managing training data - Examples, Intents, Entities, Synonyms, Regex, Stories, Actions, Responses
+- Manage multiple bots from a single UI/instance of Rasa UI
+- Create, manage and load different versions of your models for testing and optimizing
+- Log requests for usage tracking, history and improvements to your models
 - Easily execute intent parsing using different models
-- Manage Multiple Agents in one place with shared NLU instances.
-- Webhook option for Agents to fetch response text and send back to bots.
-- Authentication module can be extended to a different IDP and session is handled by JWT token
-- Webhooks also receive User information part of JWT Token in the Bearer Authorization Header
-- User level Tracking of conversations
-- Insights to show the frequently used intents and their confidence %
-- Import Agents in rasa_nlu format
-- Docker container capabilities
+- Data is stored in a SQLite DB for backing up/sharing
+- Can be used with or without a Rasa backend to manage your training data
 
-![Screenshot1](https://github.com/paschmann/rasa-ui/blob/master/resources/insights.png)
-
-![Screenshot1](https://github.com/paschmann/rasa-ui/blob/master/resources/rasa_ui_1.png)
+<img src="/web/src/assets/img/screenshot1.png" width="500">
+<img src="/web/src/assets/img/screenshot2.png" width="500">
 
 ## Getting Started
 
-Rasa UI can run directly on your Rasa NLU instance, or on a separate machine. Technically Rasa NLU is not required, you could just use the UI for managing training data.
-
+Rasa UI can run on your Rasa instance, or on a separate machine. Technically Rasa is not required, you could just use the UI for managing training data.
 
 ### Prerequisites
 
-[Rasa NLU](https://github.com/golastmile/rasa_nlu) - Version 0.14+
+[Node.js/npm](https://nodejs.org/en/) - Serves Rasa UI - Required
 
-[Rasa Core](https://github.com/golastmile/rasa_core) - Version 0.12+
-
-[PostgreSQL](https://www.postgresql.org/) - Used for storing training data (entities, intents, synonyms, etc.)
-
-[Node.js/npm](https://nodejs.org/en/) - Serves Rasa UI and acts as a middleware server for logging (to the PostgreSQL DB)
-
+[Rasa](https://github.com/RasaHQ/rasa) - Developed against Version 1.2+ - Optional
 
 ### Installing
 
-Please ensure prerequisites are fulfilled
-
-Clone/download the Rasa UI repository. Install npm packages for both Server and Web.
-
-```
-git clone https://github.com/paschmann/rasaui.git
-cd rasaui && npm install
-```
-
-Please see the [wiki](https://github.com/paschmann/rasa-ui/wiki/Rasa-UI-Install-Guide) for more detailed instructions.
-
-#### Docker Setup
-##### Quick start
-`docker pull paschmann/rasa-ui` and browse to localhost:5001
-
-##### Full Build
-The Docker file uses Multi Stage Build feature, ensure that your docker version is greater or equals to 17.05.
-In order to run this setup in docker you need to run the following command to build out the image:
-
-`docker build -t rasa-ui .` - Make sure to perform this from the location where the Dockerfile is.
-
-Now we can spin up our docker instance with the following command:
-
-**Use Your External Rasa Server**
-In this command we are setting the env variables rasanluendpoint and rasacoreendpoint to our own specific values, you can supply only 1 or both of these depending on if you want to use NLU or Core or both externally.
-
-`docker run -e "rasanluendpoint=http://youripaddress:5000" -e "rasacoreendpoint=http://youripaddress:5005" -e "postgresserver=postgres://login:password@serveraddress:5432/rasa" -itd -p 5001:5001 rasa-ui` 
-
-It's possible to fix the nlu model name for the training by passing "rasanlufixedmodelname" as an argument :
-
-`docker run -e "rasanluendpoint=http://youripaddress:5000" -e "rasacoreendpoint=http://youripaddress:5005" -e "postgresserver=postgres://login:password@serveraddress:5432/rasa" -e "rasanlufixedmodelname=nlu" -itd -p 5001:5001 rasa-ui` 
-
-## Docker compose
-If you want to quickly load all the stack locally you can use the docker-compose file
-
-`docker-compose up`
-
-On the first launch, you have to add add your rasa configurations and training files in this filetree:
+1. Clone/download the Rasa UI repository or a [release](https://www.github.com/paschmann/rasa-ui)
+2. Install npm packages.
+3. Set Rasa Server variable in package.json
 
 ```
-rasa-app-data
-├── actions
-│   ├── __pycache__
-│   │   └── actions.cpython-36.pyc
-│   └── actions.py
-├── config
-│   └── endpoints.yml
-├── logs
-├── models
-│   └── current
-│       └── dialogue
-│           ├── domain.json
-│           ├── domain.yml
-└── project
-    ├── domain.yml
-    └── stories.md
+git clone https://github.com/paschmann/rasa-ui.git
+cd rasaui
+npm install
 ```
-
-Then launch the model training if it's not already done:
-
-`docker-compose run rasa_core train`
-
-And setup SQL database schema.
-
-## DB Setup
-**If the rasa UI Postgres user is different from the postgres database admin used for database creation, ensure it is created before the execution of the script `CREATE USER <RASA_UI_DATABASE_USER> WITH PASSWORD '<RASA_UI_DATABASE_PWD>'`**
-
-### Flyway install
-You can install the RASA UI database using Flyway - simply run a docker container with these options.
-```
-docker run --rm --mount type=bind,source=<PATH_TO_MIGRATION_FOLDER>,target=/flyway/sql \
- boxfuse/flyway -url=jdbc:postgresql://<POSTGRES_SERVER_URL>/<RASA_UI_DB> -user=<POSTGRES_ADMIN_USER> -password=<POSTGRES_ADMIN_PASSWORD> -schemas=rasa_ui,public -placeholders.postgres_user=<RASA_UI_DATABASE_USER>  migrate
-```
-This will create a `flyway_schema_history` table which will track the database state, and allow you to simplify database model migrations.
-
-### Manual install
-Please specify the value of the `postgres_user` parameter with your Rasa Postgres User, using psql : `psql -v postgres_user=<RASA_UI_DATABASE_USER> -h <POSTGRES_SERVER_URL> -U <POSTGRES_ADMIN_USER> -d <RASA_UI_DB> -a -f dbcreate.sql`.
-If this is a clean install, simply execute `dbcreate.sql` on postgreSQL. If you are upgrading from a previous version, please execute the migration scripts sequentially to bring your DB model up to date.
-
-## RasaNLU Setup
-- Update your package.json file to include the IP Addresses of your rasa_nlu server and the connection string of your postgres instance.
-- Optional: Update your web/src/app.js file to include the IP Addresses of your local middleware server (no need to change this if they are running on the same instance)
 
 ## Running
+
 Run npm start from the server folder (rasa-ui)
 
 ```
@@ -133,11 +48,27 @@ npm start
 ```
 Your web application should be available on http://localhost:5001
 
+## Running from Docker
+
+If you **already** have a Rasa instance setup and running, you can run Rasa UI from docker hub using [paschmann/rasa-ui](https://hub.docker.com/r/paschmann/rasa-ui/). You will need to edit the environment variables, specifically the **rasa_endpoint**.
+
+If you **dont** have a Rasa instance setup, you can run both Rasa and Rasa UI using the [docker-compose file](https://github.com/paschmann/rasa-ui/blob/master/docker-compose.yml), copy the file to a local directory and run the command below:
+
+```
+docker-compose up
+```
+
+The docker-compose up command will use the docker-compose.yml file to create both the Rasa container and Rasa UI container, and create a networked connection between both.
+
+## Upgrading
+
+Because Rasa UI uses a Database to store training data, and other content, in the event the database schema changes, you will need to modify your database when upgrading to newer versions of Rasa UI. Please review the server/db migration folder for upgrade scripts from and to newer versions if you have existing data and want to maintain it. If you are upgrading from Rasa UI prior to v.3.0.0 there is no data migration path as previously postgres was used, and now sqlite is being used.
+
 ## Logging
 
-Since Rasa UI can be used to log events/intent parsing/training etc. we would suggest changing your endpoints for your API calls to "pass through" the Rasa UI middleware layer. All API requests are simply forwarded, logged and then returned.
+Since Rasa UI can be used to log events/intent parsing/training etc. we would suggest changing your endpoints for your API calls to "pass through" Rasa UI. All API requests are simply logged, forwarded to Rasa and then returned.
 
-e.g. Instead of calling: http://localhost:5000/parse?q=hello%20there rather call: http://localhost:5001/api/v2/rasa/parse?q=hello%20there
+e.g. Instead of POST'ing to your Rasa instance which is normally something like http://localhost:5005/model/parse?q=hello you can POST to Rasa UI (e.g. http://localhost:5001/api/v2/rasa/model/parse?q=hello)
 
 ## Contributing
 
@@ -145,8 +76,15 @@ Please read [contributing.md](contributing.md) for details on our code of conduc
 
 ## Contributers
 
-* **Paul Aschmann**
+Rasa UI is possible thanks to all the awesome contributers, thank you!
+
 * **Pradeep Mamillapalli**
+* **elvay1**
+* **huberrom**
+* **ClaasBrueggemann**
+* **btran10**
+* **btotharye**
+* **beevelop**
 
 ## License
 

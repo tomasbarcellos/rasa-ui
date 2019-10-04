@@ -1,42 +1,36 @@
 angular.module('app').controller('DashboardController', DashboardController);
 
 function DashboardController($scope, $http, Rasa_Status, NLU_log_stats, appConfig) {
-  $scope.showLoadedModels = false;
   getRasaStatus();
-  getIntentUsageTotalStatus();
+  getTotalLogEntries();
   getRequestUsageTotalStatus();
+
+  function getRequestUsageTotalStatus() {
+    NLU_log_stats.get({ path: 'request_usage_total' }, function(data) {
+      $scope.request_processed = data.total_request_usage;
+    });
+  }
+
+  function getTotalLogEntries() {
+    NLU_log_stats.get({ path: 'total_log_entries' }, function(data) {
+      $scope.total_log_entries = data.total_log_entries;
+    });
+  }
 
   function getRasaStatus() {
     Rasa_Status.get(function(data) {
-      $scope.trainings_under_this_process = window.getNoOfTrainingJobs(data);
-      $scope.available_models = window.getAvailableModels(data);
-      $scope.loaded_models = window.getLoadedModels(data);
-    });
-  }
-
-  function getRequestUsageTotalStatus() {
-    NLU_log_stats.query({ path: 'request_usage_total' }, function(data) {
-      $scope.request_processed = data[0].count;
-    });
-  }
-
-  function getIntentUsageTotalStatus() {
-    NLU_log_stats.query({ path: 'intent_usage_total' }, function(data) {
-      $scope.intents_processed = data[0].count;
-    });
-  }
-
-  $scope.unloadLoadedModel = function(model) {
-    const project = model.name;
-    const id = model.id;
-
-    $http({method: 'DELETE', url: appConfig.api_endpoint_v2 + '/rasa/models?project='+ project + '&model=' + id}).then(
-      function(response){
-        getRasaStatus();
-      },
-      function(errorResponse){
-        $scope.generateError = JSON.stringify(errorResponse.data.errorBody);
+      if (data.model_file != undefined) {
+        $scope.model_file = data.model_file;
+      } else {
+        $scope.model_file = "No model Loaded";
+        $scope.trained_at = "Unavailable";
       }
-    );
+      if (data.fingerprint != undefined) {
+        $scope.trained_at = $scope.timeConverter(data.fingerprint.trained_at);
+      } else {
+        $scope.model_file = "No model loaded";
+        $scope.trained_at = "Unavailable";
+      }
+    });
   }
 }
